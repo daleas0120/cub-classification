@@ -3,7 +3,7 @@ import pytorch_lightning as pl
 from cub_classification.model import CUBModel
 from cub_classification.dataset import CUBDataModule
 from pathlib import Path
-
+import pytorch_lightning.loggers as WandbLogger
 
 
 
@@ -19,8 +19,20 @@ if __name__=="__main__":
     parser.add_argument("--regression-weight", type=float, default=1.0)
 
     args = parser.parse_args()
+    
+    wandb_logger = WandbLogger(
+        project="CUB-Regression-Classification",
+        name=f'{args.classification_weight}-{args.regression_weight}-{args.lr}',
+        save_dir='reports',
+        log_model=True,
+    )
 
-    data_module  = CUBDataModule(
+    wandb_logger.experiment.config.update({
+        "classification_weight": args.classification_weight,
+        "regression_weight": args.regression_weight,
+        "learning_rate": args.lr,
+    })
+
         data_dir=Path(args.data_dir),
         batch_size=4,
         transform=None
@@ -38,6 +50,7 @@ if __name__=="__main__":
 
     trainer = pl.Trainer(
         max_epochs=10,
+        logger=wandb_logger
     )
 
     trainer.fit(model, datamodule=data_module)

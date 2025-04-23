@@ -3,7 +3,7 @@ from torch import nn
 from torch.nn import functional as F
 from torch.optim import SGD
 
-class CUBModel(pl.LightninModule):
+class CUBModel(pl.LightningModule):
     def __init__(
         self,
         num_classes = 200,
@@ -42,9 +42,9 @@ class CUBModel(pl.LightninModule):
 
         # this predicts the bounding box
         self.regressor = nn.Sequential(
-            nn.Linear(8 * 56 * 56, 4),
-            nno.ReLU(),
-            nn.Linear(512, self.num_classes)
+            nn.Linear(8 * 56 * 56, 512),
+            nn.ReLU(),
+            nn.Linear(512, 4)
         )
 
 

@@ -20,10 +20,10 @@ class CUBDataset(Dataset):
         ## Going to load CSV file (labels) at once, but load the images as needed
 
         self.samples = []
-
+        assert Path(self.csv_file).exists(), f"CSV file {self.csv_file} does not exist"
         with open(self.csv_file, "r") as f:
             reader = csv.DictReader(f)
-            for row in tqdm(reader, desc="Loading CSV file", total=len(reader)):
+            for row in reader:
                 self.samples.append(row)
             
 
@@ -84,14 +84,18 @@ class CUBDataModule(pl.LightningDataModule):
             self.train_dataset,
             batch_size=self.batch_size,
             shuffle=True,
+            num_workers=15,
+            persistent_workers=True
         )
 
     def val_dataloader(self):
-        
+
         return DataLoader(
             self.val_dataset,
             batch_size=self.batch_size,
             shuffle=False,
+            num_workers=15,
+            persistent_workers=True
         )
 
     

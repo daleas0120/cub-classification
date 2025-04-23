@@ -71,12 +71,12 @@ class CUBModel(pl.LightningModule):
         log_dict = {}
 
         if self.train_classification:
-            classification_loss = F.cross_entropy(labels, labels_pred)
+            classification_loss = F.cross_entropy(labels_pred, labels)
             loss += (self.classification_weight * classification_loss)
             log_dict["train_classification_loss"] = classification_loss
 
         if self.train_regression:
-            regression_loss = F.mse_loss(bounding_boxes, bounding_boxes_pred)
+            regression_loss = F.mse_loss(bounding_boxes_pred, bounding_boxes)
             loss += (self.regression_weight * regression_loss)
             log_dict["train_regression_loss"] = regression_loss
 
@@ -92,12 +92,12 @@ class CUBModel(pl.LightningModule):
         log_dict = {}
 
         if self.train_classification:
-            classification_loss = F.cross_entropy(labels, labels_pred)
+            classification_loss = F.cross_entropy(labels_pred, labels)
             loss += (self.classification_weight * classification_loss)
             log_dict["val_classification_loss"] = classification_loss
 
         if self.train_regression:
-            regression_loss = F.mse_loss(bounding_boxes, bounding_boxes_pred)
+            regression_loss = F.mse_loss(bounding_boxes_pred, bounding_boxes)
             loss += (self.regression_weight * regression_loss)
             log_dict["val_regression_loss"] = regression_loss
 

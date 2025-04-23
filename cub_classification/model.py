@@ -1,5 +1,6 @@
 import pytorch_lightning as pl
 from torch import nn
+import torch
 import torch.nn.functional as F
 from torch.optim import SGD
 
@@ -92,18 +93,61 @@ class CUBModel(pl.LightningModule):
         log_dict = {}
 
         if self.train_classification:
-            classification_loss = F.cross_entropy(labels_pred, labels)
-            loss += (self.classification_weight * classification_loss)
-            log_dict["val_classification_loss"] = classification_loss
+            cls_loss = F.cross_entropy(labels_pred, labels)
+            loss += self.classification_weight * cls_loss
+            log_dict["val_classification_loss"] = cls_loss
 
         if self.train_regression:
-            regression_loss = F.mse_loss(bounding_boxes_pred, bounding_boxes)
-            loss += (self.regression_weight * regression_loss)
-            log_dict["val_regression_loss"] = regression_loss
+            reg_loss = F.mse_loss(bounding_boxes_pred, bounding_boxes)
+            loss += self.regression_weight * reg_loss
+            log_dict["val_regression_loss"] = reg_loss
 
-        self.log_dict(log_dict, prog_bar=True, on_epoch=True)
+        if self.train_classification:
+            preds = labels_pred.argmax(dim=1)
+            acc = (preds == labels).float().mean()
+            log_dict["val_accuracy"] = acc
+
+        if self.train_regression:
+            iou = self._batch_iou(bounding_boxes_pred, bounding_boxes).mean()
+            log_dict["val_iou"] = iou
+
+        if self.train_classification and self.train_regression:
+            combined = (
+                acc + iou
+            ) / 2
+        elif self.train_classification:
+            combined = acc
+        else:
+            combined = iou
+
+        log_dict["val_combined_metric"] = combined
+
+        self.log_dict(log_dict, on_step=False, on_epoch=True, prog_bar=True)
 
         return loss
 
     def configure_optimizers(self):
         return SGD(self.parameters(), lr=self.lr)
+    
+    @staticmethod
+    def _batch_iou(box_a, box_b):
+        """
+        box_a, box_b : (B, 4) tensors  [x1, y1, x2, y2]
+        returns       : (B,) IoU for each pair
+        """
+        # intersection
+        x1 = torch.maximum(box_a[:, 0], box_b[:, 0])
+        y1 = torch.maximum(box_a[:, 1], box_b[:, 1])
+        x2 = torch.minimum(box_a[:, 2], box_b[:, 2])
+        y2 = torch.minimum(box_a[:, 3], box_b[:, 3])
+
+        inter_w = (x2 - x1).clamp(min=0)
+        inter_h = (y2 - y1).clamp(min=0)
+        inter = inter_w * inter_h
+
+        # areas
+        area_a = (box_a[:, 2] - box_a[:, 0]) * (box_a[:, 3] - box_a[:, 1])
+        area_b = (box_b[:, 2] - box_b[:, 0]) * (box_b[:, 3] - box_b[:, 1])
+        union = area_a + area_b - inter + 1e-7
+
+        return inter / union

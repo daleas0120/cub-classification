@@ -32,7 +32,8 @@ if __name__=="__main__":
         "regression_weight": args.regression_weight,
         "learning_rate": args.lr,
     })
-
+    
+    data_module  = CUBDataModule(
         data_dir=Path(args.data_dir),
         batch_size=4,
         transform=None

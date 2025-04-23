@@ -13,7 +13,7 @@ class CUBModel(pl.LightningModule):
             regression_weight = 1.0,
             lr = 1e-3
     ):
-        super().__init()
+        super().__init__()
         self.save_hyperparameters()
 
         self.num_classes = num_classes
